@@ -10,7 +10,6 @@ DB_NAME = settings.DB_NAME
 def create_db(app):
     # Check if the database file exists
     if not os.path.exists("core" + DB_NAME):
-
         # Set the application for the SQLAlchemy object
         db.app = app
 
@@ -19,4 +18,3 @@ def create_db(app):
 
         # Create the database tables based on the defined models
         db.create_all()
-            

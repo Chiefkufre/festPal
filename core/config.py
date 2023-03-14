@@ -18,9 +18,8 @@ class Setting:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     # path to store images
-    UPLOAD_FOLDER = 'static/images'
-    ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
-
+    UPLOAD_FOLDER = "static/images"
+    ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif"}
 
     # static fir directory
     STATIC_FOLDER: Path = BASE_DIR / "static"

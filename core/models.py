@@ -5,10 +5,8 @@ from sqlalchemy.types import Boolean
 from core.database import db
 
 
-
 # User model that represents a user data
 class User(db.Model):
-
     __tablename__ = "users"
 
     id = db.Column(db.Integer, primary_key=True)
@@ -23,21 +21,16 @@ class User(db.Model):
     )
     is_active = db.Column(Boolean, default=True)
     event = db.relationship("Event", backref="user", lazy=True)
-    
-
-    
 
 
 # Event model that represents events state
 class Event(db.Model):
+    __tablename__ = "events"
 
-    __tablename__ = 'events'
-
-    id  = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True)
     event_name = db.Column(db.String(100), nullable=False)
     location = db.Column(db.String(100), nullable=False)
     start_date = db.Column(db.String(50), nullable=False)
     end_date = db.Column(db.String(50), nullable=False)
     image = db.Column(db.String(255))
     host = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
-
