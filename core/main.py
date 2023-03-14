@@ -1,11 +1,17 @@
-from flask import (Flask, Response, redirect, render_template, request,
-                   session, url_for, flash)
+import os
+import uuid
+from datetime import datetime
+
+from flask import (Flask, Response, flash, redirect, render_template, request,
+                   session, url_for)
 from flask_login import LoginManager, current_user, login_user, logout_user
 from werkzeug.security import check_password_hash, generate_password_hash
+from werkzeug.utils import secure_filename
 
 from core.config import settings
 from core.database import create_db, db
-from core.models import Event, User
+from core.models import VirtualListeningParty, Room, User
+from core.notifications import sendNotification, sendSMS, create_room, generate_token
 
 
 # create application instance
@@ -62,47 +68,89 @@ def create_app_instance():
         if register_as == 'attendee':
             return redirect(url_for("addImage"))
         else:
-            return redirect(url_for('create_festival'))
+            return redirect(url_for('reate_virtual_listening_party'))
     
         return render_template('register.html')
-    
 
-    @app.route('/create', methods=['GET','POST'])
-    def create_festival():
-
-    
+    # Route for creating a new virtual listening party
+    @app.route('/create', methods=['GET', 'POST'])
+    def create_virtual_listening_party():
         if request.method == 'POST':
-            event_name = request.form.get("name")
-            location = request.form.get("location")
-            start_date = request.form.get("start")
-            end_date = request.form.get("end")
-        
-        user = current_user
 
-        user_type = user.register_as
+            name = request.form['name']
+            email = request.form['email']
+            description = request.form['description']
+            date = datetime.strptime(request.form['date'], '%Y-%m-%d %H:%M:%S')
 
-        if user_type == "attendees":
-            flash("You can create an event. Please register as an evnt host")
-            return redirect(url_for("register"))
+            # Generate a unique identifier for the virtual listening party
+            identifier = str(uuid.uuid4())
 
 
-        if not all([start_date, end_date, location, event_name]):
-            return render_template('create.html', msg="Some fields are missing")
-        
+            if not all([name, email, description, date]):
+                return render_template('create.html', msg="Some fields are missing")
 
-        # create new festival
-        new_festival = Event(event_name=event_name, location=location, start_date=start_date, end_date=end_date)
+            # create a unique event link
+            event_link = f"/vlp/{identifier}"
 
+            # Create the virtual listening party in the database
+            new_vlp = VirtualListeningParty(name=name, email=email, description=description, date=date, link=event_link)
+            db.session.add(new_vlp)
+            db.session.commit() 
+            
+            # Create a room for the virtual listening party
+            room_name = f"{name} Room"
+            create_room(name=room_name)
+           
 
-        # store into db
-        db.session.add(new_festival)
-        db.session.commit()
+            # Send a WhatsApp message to all registered users with a link to the virtual listening party
 
+            users = User.query.all()
+            for user in users:
+                reciepent_no = user.phone_number
 
-        # return to route to upload profile picture
-        return redirect(url_for("addImage"))
+                msg = f"Join the virtual listening party {new_vlp.name} on {new_vlp.link}"
+                sendNotification(user.phone_number, )
+
+            #  Redirect the user to the virtual listening party page
+            return redirect(url_for('virtual_listening_party', identifier=identifier))
+
+        return render_template('create.html')
+
+   
     
+    @app.route('/vlp/<identifier>/join', methods=['POST'])
+    def join_virtual_listening_party(identifier):
 
+        if request.method == 'POST':
+            name = request.form['name']
+            phone_number = request.form['phone_number']
+
+            # Find the virtual listening party by its identifier
+
+            link = f"/vlp/{identifier}"
+            
+            vlp = VirtualListeningParty.query.filter_by(link=link).first()
+
+            # Find the room for the virtual listening party
+            room = Room.query.filter_by(vlp_id=vlp.id).first()
+
+            # Create or update the user
+            user = User.query.filter_by(phone_number=phone_number).first()
+            if user:
+                user.name = name
+                user.vlp_id = vlp.id
+                user.room_id = room.id
+            else:
+                user = User(name=name, phone_number=phone_number, vlp_id=vlp.id, room_id=room.id)
+                db.session.add(user)
+                db.session.commit()
+
+            # Generate a Twilio access token for the user
+            token = generate_token(room)
+
+        # Render the join room template with the Access Token and room name
+        return render_template('join_room.html', token=token.to_jwt().decode(), room_name=room.name)
+            
 
     @app.route('/', methods=['GET', 'POST'])
     def show():
@@ -151,7 +199,10 @@ def create_app_instance():
         if user and check_pass:
 
             login_user(user)
-
+            
+            # send login notification
+            msg = f"Ahoy!! A user login just happened on your account! Was this you?"
+            sendNotification(user.phone, msg)
             return redirect(url_for('show'))
 
 
