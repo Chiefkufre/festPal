@@ -25,17 +25,19 @@ class User(db.Model):
     event = db.relationship("Event", backref="user", lazy=True)
     
 
+    
+
 
 # Event model that represents events state
 class Event(db.Model):
 
     __tablename__ = 'events'
 
-    id  = db.column(db.Integer, primary_key=True)
-    event_name = db.column(db.String(100), nullable=False)
-    location = db.column(db.String(100), nullable=False)
-    start_date = db.column(db.String(50), nullable=False)
-    end_date = db.column(db.String(50), nullable=False)
-
-    creator = db.Column(db.Integer, db.ForeignKey("users.id"), ondelete="CASCADE", nullable=False)
+    id  = db.Column(db.Integer, primary_key=True)
+    event_name = db.Column(db.String(100), nullable=False)
+    location = db.Column(db.String(100), nullable=False)
+    start_date = db.Column(db.String(50), nullable=False)
+    end_date = db.Column(db.String(50), nullable=False)
+    image = db.Column(db.String(255))
+    host = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
 
