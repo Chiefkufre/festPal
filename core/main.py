@@ -16,12 +16,6 @@ def create_app_instance():
         # initialize database
         create_db(app)
 
-
-
-    @app.route('/', methods=['GET', 'POST'])
-    def home():
-        return render_template('show.html')
-
     
 
     @app.route('/register', methods=['GET', 'POST'])
@@ -61,9 +55,9 @@ def create_app_instance():
 
 
         if register_as == 'attendee':
-            return render_template("addProfieImage.html")
+            return rdirect(url_for("addImage"))
         else:
-            return render_template("addEventImage.html")
+            return redirect(url_for('create_festival'))
     
         return render_template('register.html')
     
@@ -94,7 +88,36 @@ def create_app_instance():
 
 
         # return to route to upload profile picture
-        return redirect(url_for("add_image"))
+        return redirect(url_for("addImage"))
+    
+
+
+    @app.route('/', methods=['GET', 'POST'])
+    def show():
+
+        festival = []
+
+        events = Event.query.all()
+        for event in events:
+            event_name = event.event_name
+            location = event.location
+            start_date = event.start_date
+            end_date = event.end_date
+            image = None;
+
+            if event.image_url != None:
+                image = event.image_url
+            
+            data = {
+                "eventName": event_name,
+                "location": location,
+                "start_date": start_date,
+                "end_date": end_date,
+                "image": image
+            }
+        
+            festival.append(data)
+        return render_template('show.html', _payload=festival)
 
     @app.route('/login', methods=['GET', 'POST'])
     def login():
