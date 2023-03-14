@@ -1,7 +1,9 @@
 from flask import Flask, redirect, render_template, Response, request, session, url_for
+from werkzeug.security import generate_password_hash, check_password_hash
 
 from core.config import settings
-from core.database import create_db
+from core.database import create_db, db
+from core.models import User, Event
 
 
 # create application instance
@@ -31,22 +33,75 @@ def create_app_instance():
             address = request.form.get('address')
             wsn = request.form.get('tel')
             password = request.form.get('password')
+            bio = request.form.get('bio')
+            register_as = request.form.get('register_as').strip()
         
-       
+        # check if all fields are include
         if not all([name, email,address,wsn,password]):
             return render_template("register.html", msg="some field are missing")
 
-        
+
+        # hash password to secure strings
+        hash_pass = generate_password_hash(password)
+
+        if hash_pass:
+            password = hash_pass
 
 
-        
+        # create new user
+        new_user = User(name=name, email=email, password=password, address=address, bio=bio, phone=wsn)
+
+        # store new user
+
+        db.session.add(new_user)
+        db.session.commit()
+
+        # set user session
+        session['user_id'] = new_user.id
 
 
+        if register_as == 'attendee':
+            return render_template("addProfieImage.html")
+        else:
+            return render_template("addEventImage.html")
+    
         return render_template('register.html')
+    
 
+    @app.route('/create', methods=['GET','POST'])
+    def create_festival():
+
+        user_id = session.get('user_id')
+
+        if request.method == 'POST':
+            event_name = request.form.get("name")
+            location = request.form.get("location")
+            start_date = request.form.get("start")
+            end_date = request.form.get("end")
+        
+
+        if not all([start_date, end_date, location, event_name]):
+            return render_template('create.html', msg="Some fields are missing")
+        
+
+        # create new festival
+        new_festival = Event(event_name=event_name, location=location, start_date=start_date, end_date=end_date)
+
+
+        # store into db
+        db.session.add(new_festival)
+        db.session.commit()
+
+
+        # return to route to upload profile picture
+        return redirect(url_for("add_image"))
 
     @app.route('/login', methods=['GET', 'POST'])
     def login():
+
+
+
+        session['user_id'] = user.id
         return render_template('login.html')
     
 
