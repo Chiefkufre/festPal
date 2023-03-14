@@ -36,6 +36,7 @@ class VirtualListeningParty(db.Model):
     name = db.Column(db.String(100), nullable=False)
     description = db.Column(db.String(255))
     link = db.Column(db.String(255))
+    date = db.Column(db.DateTime, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(
         db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
@@ -56,14 +57,13 @@ class Room(db.Model):
 
 
 
-
 # the user model
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     email = db.Column(db.String(50), unique=True, nullable=False)
     phone_number = db.Column(db.String(20), unique=True, nullable=False)
-    virtual_listening_party_id = db.Column(db.Integer, db.ForeignKey('virtual_listening_party.id'))
+    vlp_id = db.Column(db.Integer, db.ForeignKey('virtual_listening_party.id'))
     room_id = db.Column(db.Integer, db.ForeignKey('room.id'))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(
