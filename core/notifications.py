@@ -1,10 +1,8 @@
 
+from decouple import config
 from twilio.rest import Client
 from twilio.twiml.messaging_response import MessagingResponse
-
-
-from decouple import config
-
+from twilio.twiml.voice_response import VoiceResponse
 
 
 twilio_acct_sid = config("TWILIO_ACC_SID")
@@ -40,3 +38,27 @@ def sendSMS(recipent_no, msg):
         from_ = twilio_phone_no,
         body= str(response)
     )
+
+
+
+def create_room(room_name):
+    
+    room_sid = 'your_twilio_room_sid'
+
+    response = VoiceResponse()
+
+    dial = response.dial()
+
+    dial.conference(room_sid)
+
+    room = Room(name=f"Virtual Listening Party {identifier}", sid=room_sid)
+
+    db.session.add(room)
+    db.session.commit()
+
+
+
+def generate_token(room):
+    token = AccessToken(account_sid, auth_token, identity=user.id)
+    video_grant = VideoGrant(room=room.sid)
+    token.add
