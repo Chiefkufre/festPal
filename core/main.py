@@ -1,4 +1,4 @@
-from flask import Flask, redirect, render_template, request, session, url_for
+from flask import Flask, redirect, render_template, Response, request, session, url_for
 
 from core.config import settings
 from core.database import create_db
@@ -26,10 +26,21 @@ def create_app_instance():
     def register():
 
         if request.method == 'POST':
-            name = request.POST.get('name')
-            email = request.POST.get('email')
-            address = request.POST.get('address')
-            wsn = request.POST.get('tel')
+            name = request.form.get('name')
+            email = request.form.get('email')
+            address = request.form.get('address')
+            wsn = request.form.get('tel')
+            password = request.form.get('password')
+        
+       
+        if not all([name, email,address,wsn,password]):
+            return render_template("register.html", msg="some field are missing")
+
+        
+
+
+        
+
 
         return render_template('register.html')
 
