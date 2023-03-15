@@ -45,15 +45,20 @@ def create_app_instance():
         if request.method == 'POST':
             name = request.form.get('name')
             email = request.form.get('email')
-            wsn = request.form.get('tel')
+            wsn = request.form.get('phone')
             password = request.form.get('password')
-            register_as = request.form.get('register_as').strip()
 
          # check if all required fields are present
-        if not (name and email and wsn and password and register_as):
+        if not (name and email and wsn and password):
             return render_template("register.html", msg="Some fields are missing")
 
+        emailObj = User.query.filter(User.email==email).first()
+
+        if emailObj:
+            flash("user already exist")
+            return redirect(url_for("login"))
         # hash password to secure string
+
         hash_pass = generate_password_hash(password)
 
         # check if hashing was successful
@@ -63,21 +68,15 @@ def create_app_instance():
             return render_template("register.html", msg="Password hashing failed")
 
         # create new user
-        new_user = User(name=name, email=email, password=password, phone_number=wsn, register_as=register_as)
+        new_user = User(name=name, email=email, password=password, phone_number=wsn)
 
         # store new user
         db.session.add(new_user)
         db.session.commit()
 
-        # set user session
-        session['user_id'] = new_user.id
+        return redirect(url_for('login'))
 
-        # if register_as == 'attendee':
-        #     return redirect(url_for("addImage"))
-        # else:
-        #     return redirect(url_for('reate_virtual_listening_party'))
-
-        return render_template('register.html')
+ 
 
 
     # Route for creating a new virtual listening party
@@ -103,6 +102,8 @@ def create_app_instance():
             
             # Create a room for the virtual listening party
             room_name = f"{name} Room"
+
+            # This function calls twilio api to create room
             create_room(room_name)
            
 
@@ -219,8 +220,8 @@ def create_app_instance():
             
             # send login notification
             msg = f"Ahoy!! A user login just happened on your account! Was this you?"
-            sendNotification(user.phone, msg)
-            return redirect(url_for('show'))
+            sendNotification(user.phone_number, msg)
+            return redirect(url_for('show_virtual_parties'))
 
         return render_template('login.html')
     

@@ -22,7 +22,7 @@ def sendNotification(recipent_no, msg):
 
     client.messages.create(
         to = recipent_no,
-        from_ = twilio_whatsapp_no,
+        from_ = twilio_phone_no,
         body = msg
     )
 
