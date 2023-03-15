@@ -3,7 +3,7 @@ import uuid
 from datetime import datetime
 
 from flask import (Flask, Response, flash, redirect, render_template, request,
-                   session, url_for)
+                   session, url_for, jsonify)
 from flask_login import LoginManager, current_user, login_user, logout_user
 from werkzeug.security import check_password_hash, generate_password_hash
 from werkzeug.utils import secure_filename
@@ -65,10 +65,10 @@ def create_app_instance():
         session['user_id'] = new_user.id
 
 
-        if register_as == 'attendee':
-            return redirect(url_for("addImage"))
-        else:
-            return redirect(url_for('reate_virtual_listening_party'))
+        # if register_as == 'attendee':
+        #     return redirect(url_for("addImage"))
+        # else:
+        #     return redirect(url_for('reate_virtual_listening_party'))
     
         return render_template('register.html')
 
@@ -109,7 +109,7 @@ def create_app_instance():
                 reciepent_no = user.phone_number
 
                 msg = f"Join the virtual listening party {new_vlp.name} on {new_vlp.link}"
-                sendNotification(user.phone_number, )
+                sendNotification(user.phone_number, msg)
 
             #  Redirect the user to the virtual listening party page
             return redirect(url_for('virtual_listening_party', identifier=identifier))
@@ -146,39 +146,57 @@ def create_app_instance():
                 db.session.commit()
 
             # Generate a Twilio access token for the user
-            token = generate_token(room)
+            token = generate_token(room.name, room.sid)
 
         # Render the join room template with the Access Token and room name
-        return render_template('join_room.html', token=token.to_jwt().decode(), room_name=room.name)
+        return render_template('join_room.html', token=token, room_name=room.name)
             
 
-    @app.route('/', methods=['GET', 'POST'])
-    def show():
+    # route to display virtual party
+    @app.route('/virtual-parties')
+    def show_virtual_parties():
 
-        festival = []
+        now = datetime.utcnow()
 
-        events = Event.query.all()
-        for event in events:
-            event_name = event.event_name
-            location = event.location
-            start_date = event.start_date
-            end_date = event.end_date
-            image = None;
+        active_parties = VirtualListeningParty.query.filter(VirtualListeningParty.date <= now).all()
 
-            if event.image_url != None:
-                image = event.image_url
-            
-            data = {
-                "eventName": event_name,
-                "location": location,
-                "start_date": start_date,
-                "end_date": end_date,
-                "image": image
+        upcoming_parties = VirtualListeningParty.query.filter(VirtualListeningParty.date > now).all()
+
+        active_parties_list = []
+
+        for party in active_parties:
+            party_info = {
+                'id': party.id,
+                'name': party.name,
+                'description': party.description,
+                'date': party.date.isoformat(),
+                'link': party.link,
             }
-        
-            festival.append(data)
-        return render_template('show.html', _payload=festival)
+            active_parties_list.append(party_info)
 
+        upcoming_parties_list = []
+        for party in upcoming_parties:
+            party_info = {
+                'id': party.id,
+                'name': party.name,
+                'description': party.description,
+                'date': party.date.isoformat(),
+                'link': party.link,
+            }
+            upcoming_parties_list.append(party_info)
+
+        
+        # Send whatsapp messages of all upcoming parties to users
+        users = User.query.all()
+        for user in users:
+            reciepent_no = user.phone_number
+
+            msg = f"Ahoy!! Keep up with all upcoming parties. Visit our website to see more"
+            sendNotification(user.phone_number, msg)
+
+        return render_template('show.html', active_parties = active_parties_list, upcoming_parties = upcoming_parties_list,)
+        
+      
 
     # Login routes
     @app.route('/login', methods=['GET', 'POST'])
@@ -205,9 +223,6 @@ def create_app_instance():
             sendNotification(user.phone, msg)
             return redirect(url_for('show'))
 
-
-
-        session['user_id'] = user.id
         return render_template('login.html')
     
 
