@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-3">
+  <div class="row">
+    <div class="col-md-8">
+      <div class="embed-responsive embed-responsive-16by9">
+        <iframe class="embed-responsive-item" src="{{ room_link }}"></iframe>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <h4>Chat</h4>
+      <hr>
+      <div id="messages"></div>
+      <form id="chat-form">
+        <div class="form-group">
+          <input type="text" class="form-control" id="message-input" placeholder="Type your message...">
+        </div>
+        <button type="submit" class="btn btn-primary">Send</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+  $(document).ready(function() {
+    var socket = io.connect('http://' + document.domain + ':' + location.port);
+
+    socket.on('connect', function() {
+      socket.emit('join', {'room': '{{ room_id }}'});
+    });
+
+    socket.on('message', function(data) {
+      $('#messages').append('<p>' + data.message + '</p>');
+    });
+
+    $('#chat-form').submit(function(e) {
+      e.preventDefault();
+      var message = $('#message-input').val();
+      $('#message-input').val('');
+      socket.emit('message', {'message': message, 'room': '{{ room_id }}'});
+    });
+  });
+</script>
+{% endblock %}

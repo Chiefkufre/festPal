@@ -28,49 +28,57 @@ def create_app_instance():
         create_db(app)
 
     
+    @login_manager.user_loader
+    def load_user(user_id):
+        return User.query.get(int(user_id))
 
-    @app.route('/register', methods=['GET', 'POST'])
+
+
+    @app.route('/register', methods=['GET'])
+    def return_register_form():
+        return render_template('register.html')
+
+    @app.route('/register', methods=['POST'])
     def register():
+
 
         if request.method == 'POST':
             name = request.form.get('name')
             email = request.form.get('email')
-            address = request.form.get('address')
             wsn = request.form.get('tel')
             password = request.form.get('password')
-            bio = request.form.get('bio')
             register_as = request.form.get('register_as').strip()
-        
-        # check if all fields are include
-        if not all([name, email,address,wsn,password]):
-            return render_template("register.html", msg="some field are missing")
 
+         # check if all required fields are present
+        if not (name and email and wsn and password and register_as):
+            return render_template("register.html", msg="Some fields are missing")
 
-        # hash password to secure strings
+        # hash password to secure string
         hash_pass = generate_password_hash(password)
 
-        if hash_pass:
+        # check if hashing was successful
+        if hash_pass is not None:
             password = hash_pass
-
+        else:
+            return render_template("register.html", msg="Password hashing failed")
 
         # create new user
-        new_user = User(name=name, email=email, password=password, address=address, bio=bio, phone=wsn)
+        new_user = User(name=name, email=email, password=password, phone_number=wsn, register_as=register_as)
 
         # store new user
-
         db.session.add(new_user)
         db.session.commit()
 
         # set user session
         session['user_id'] = new_user.id
 
-
         # if register_as == 'attendee':
         #     return redirect(url_for("addImage"))
         # else:
         #     return redirect(url_for('reate_virtual_listening_party'))
-    
+
         return render_template('register.html')
+
 
     # Route for creating a new virtual listening party
     @app.route('/create', methods=['GET', 'POST'])
@@ -78,28 +86,24 @@ def create_app_instance():
         if request.method == 'POST':
 
             name = request.form['name']
-            email = request.form['email']
             description = request.form['description']
-            date = datetime.strptime(request.form['date'], '%Y-%m-%d %H:%M:%S')
+            date_string = request.form['date']
 
             # Generate a unique identifier for the virtual listening party
             identifier = str(uuid.uuid4())
-
-
-            if not all([name, email, description, date]):
-                return render_template('create.html', msg="Some fields are missing")
 
             # create a unique event link
             event_link = f"/vlp/{identifier}"
 
             # Create the virtual listening party in the database
-            new_vlp = VirtualListeningParty(name=name, email=email, description=description, date=date, link=event_link)
+            date = datetime.strptime(date_string, '%Y-%m-%dT%H:%M')
+            new_vlp = VirtualListeningParty(name=name, description=description, date=date, link=event_link)
             db.session.add(new_vlp)
             db.session.commit() 
             
             # Create a room for the virtual listening party
             room_name = f"{name} Room"
-            create_room(name=room_name)
+            create_room(room_name)
            
 
             # Send a WhatsApp message to all registered users with a link to the virtual listening party
@@ -112,48 +116,42 @@ def create_app_instance():
                 sendNotification(user.phone_number, msg)
 
             #  Redirect the user to the virtual listening party page
-            return redirect(url_for('virtual_listening_party', identifier=identifier))
+            return redirect(url_for('show_virtual_parties'))
 
         return render_template('create.html')
 
    
     
-    @app.route('/vlp/<identifier>/join', methods=['POST'])
+    @app.route('/vlp/<identifier>/join', methods=['GET','POST'])
     def join_virtual_listening_party(identifier):
+        # Find the virtual listening party by its identifier
+        link = f"/vlp/{identifier}"
 
-        if request.method == 'POST':
-            name = request.form['name']
-            phone_number = request.form['phone_number']
+        vlp = VirtualListeningParty.query.filter_by(link=link).first()
 
-            # Find the virtual listening party by its identifier
-
-            link = f"/vlp/{identifier}"
-            
-            vlp = VirtualListeningParty.query.filter_by(link=link).first()
-
+        if vlp:
             # Find the room for the virtual listening party
             room = Room.query.filter_by(vlp_id=vlp.id).first()
 
-            # Create or update the user
-            user = User.query.filter_by(phone_number=phone_number).first()
-            if user:
-                user.name = name
-                user.vlp_id = vlp.id
-                user.room_id = room.id
+            if room:
+                # Generate a Twilio access token for the user
+                token = generate_token(room.name, room.sid)
+
+                # Render the join room template with the Access Token and room name
+                return render_template('room.html', token=token, room_name=room.name)
             else:
-                user = User(name=name, phone_number=phone_number, vlp_id=vlp.id, room_id=room.id)
-                db.session.add(user)
-                db.session.commit()
+                # Room not found
+                return "Room not found"
+        else:
+            # VirtualListeningParty not found
+            return "VirtualListeningParty not found"
+        
+        return render_template('room.html', room=room)
 
-            # Generate a Twilio access token for the user
-            token = generate_token(room.name, room.sid)
-
-        # Render the join room template with the Access Token and room name
-        return render_template('join_room.html', token=token, room_name=room.name)
             
 
-    # route to display virtual party
-    @app.route('/virtual-parties')
+    # route to display virtual party 
+    @app.route('/')
     def show_virtual_parties():
 
         now = datetime.utcnow()
@@ -184,8 +182,8 @@ def create_app_instance():
                 'link': party.link,
             }
             upcoming_parties_list.append(party_info)
-
         
+
         # Send whatsapp messages of all upcoming parties to users
         users = User.query.all()
         for user in users:
@@ -194,7 +192,7 @@ def create_app_instance():
             msg = f"Ahoy!! Keep up with all upcoming parties. Visit our website to see more"
             sendNotification(user.phone_number, msg)
 
-        return render_template('show.html', active_parties = active_parties_list, upcoming_parties = upcoming_parties_list,)
+        return render_template('show.html', active_parties = active_parties_list, upcoming_parties = upcoming_parties_list)
         
       
 
@@ -209,7 +207,8 @@ def create_app_instance():
         user = User.query.filter(User.email == email).first()
 
         if user is None:
-            return render_template('login.html', msg="user not found")
+            flash("user not found")
+            return render_template('login.html')
         
         # check if user password is correct
         check_pass = check_password_hash(user.password, password)
@@ -230,7 +229,7 @@ def create_app_instance():
     @app.route('/logout', methods=['GET'])
     def logout():
         logout_user()
-        return redirect(url_for("home"))
+        return redirect(url_for("login"))
 
 
     

@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+
+{% block title %}
+    Virtual Parties
+{% endblock %}
+
+{% block content %}
+    <div class="container">
+        <h1>Virtual Parties</h1>
+
+        {% if active_parties %}
+            <h2>Active Parties</h2>
+            <ul class="list-group">
+                {% for party in active_parties %}
+                    <li class="list-group-item">
+                        <h3>{{ party.name }}</h3>
+                        <p>{{ party.description }}</p>
+                        <p>Date: {{ party.date }}</p>
+                        <a href="{{ url_for('join_virtual_listening_party', identifier=party.link.split('/')[-1]) }}" class="btn btn-primary">Join Party</a>
+
+                        
+                    </li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+
+        {% if upcoming_parties %}
+            <h2>Upcoming Parties</h2>
+            <ul class="list-group">
+                {% for party in upcoming_parties %}
+                    <li class="list-group-item">
+                        <h3>{{ party.name }}</h3>
+                        <p>{{ party.description }}</p>
+                        <p>Date: {{ party.date }}</p>
+                        <a href="{{ url_for('join_virtual_listening_party', identifier=party.link.split('/')[-1]) }}" class="btn btn-primary">Join Party</a>
+
+                    </li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    </div>
+{% endblock %}

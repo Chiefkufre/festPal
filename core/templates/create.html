@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container">
+  <h1>Create Virtual Party</h1>
+  <form method="POST" action="{{ url_for('create_virtual_listening_party') }}">
+    <div class="mb-3">
+      <label for="name" class="form-label">Name</label>
+      <input type="text" class="form-control" id="name" name="name" placeholder="Enter party name">
+    </div>
+    <div class="mb-3">
+      <label for="description" class="form-label">Description</label>
+      <textarea class="form-control" id="description" name="description" rows="3" placeholder="Enter party description"></textarea>
+    </div>
+    <div class="mb-3">
+      <label for="date" class="form-label">Date</label>
+      <input type="datetime-local" class="form-control" id="date" name="date">
+    </div>
+    <div class="mb-3">
+      <label for="link" class="form-label">Link</label>
+      <input type="text" class="form-control" id="link" name="link" placeholder="Enter audio link">
+    </div>
+    <button type="submit" class="btn btn-primary">Create Party</button>
+  </form>
+</div>
+{% endblock %}

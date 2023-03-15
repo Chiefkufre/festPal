@@ -10,6 +10,8 @@ twilio_auth_token = config("TWILIO_AUTH_TOKEN")
 twilio_phone_no = config("TWILIO_NUMBER")
 twilio_whatsapp_no = config("TWILIO_WHATSAPP_NO")
 
+from core.database import db
+
 from core.models import Room
 
 client = Client(twilio_acct_sid, twilio_auth_token)
