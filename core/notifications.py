@@ -59,16 +59,16 @@ def create_room(room_name, vlp_id):
     resp = VoiceResponse()
 
     # Play the welcome message
-    resp.play('https://api.twilio.com/cowbell.mp3')
+    music = resp.play('https://api.twilio.com/cowbell.mp3')
 
-    print(resp.play('https://api.twilio.com/cowbell.mp3'))
     # Connect the user to the room
     dial = resp.dial()
 
     dial.conference(identifier, startConferenceOnEnter=True, endConferenceOnExit=True)
 
     # Return the room SID
-    return identifier
+    return identifier, music
+
 
 
 def generate_token(room, room_sid, identity):
