@@ -114,7 +114,7 @@ def create_app_instance():
                 reciepent_no = user.phone_number
 
                 msg = f"Join the virtual listening party {new_vlp.name} on {new_vlp.link}"
-                sendNotification(user.phone_number, msg)
+                # sendNotification(user.phone_number, msg)
 
             #  Redirect the user to the virtual listening party page
             return redirect(url_for('show_virtual_parties'))
@@ -191,7 +191,7 @@ def create_app_instance():
             reciepent_no = user.phone_number
 
             msg = f"Ahoy!! Keep up with all upcoming parties. Visit our website to see more"
-            sendNotification(user.phone_number, msg)
+            # sendNotification(user.phone_number, msg)
 
         return render_template('show.html', active_parties = active_parties_list, upcoming_parties = upcoming_parties_list)
         
@@ -220,7 +220,7 @@ def create_app_instance():
             
             # send login notification
             msg = f"Ahoy!! A user login just happened on your account! Was this you?"
-            sendNotification(user.phone_number, msg)
+            # sendNotification(user.phone_number, msg)s
             return redirect(url_for('show_virtual_parties'))
 
         return render_template('login.html')

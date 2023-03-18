@@ -59,6 +59,7 @@ def create_room(room_name):
     # Play the welcome message
     resp.play('https://api.twilio.com/cowbell.mp3')
 
+    print(resp.play('https://api.twilio.com/cowbell.mp3'))
     # Connect the user to the room
     dial = resp.dial()
 
