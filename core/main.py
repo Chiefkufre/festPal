@@ -34,6 +34,7 @@ def create_app_instance():
 
 
 
+
     @app.route('/register', methods=['GET'])
     def return_register_form():
         return render_template('register.html')
@@ -74,6 +75,10 @@ def create_app_instance():
         db.session.add(new_user)
         db.session.commit()
 
+        # sendNotification(new_user.phone_number, msg=f"your account was created successfully")
+
+
+       
         return redirect(url_for('login'))
 
  
@@ -96,7 +101,12 @@ def create_app_instance():
 
             # Create the virtual listening party in the database
             date = datetime.strptime(date_string, '%Y-%m-%dT%H:%M')
-            new_vlp = VirtualListeningParty(name=name, description=description, date=date, link=event_link)
+
+            user = current_user
+
+            user_id = user.id
+
+            new_vlp = VirtualListeningParty(name=name, description=description, date=date, link=event_link, user_id=user_id)
             db.session.add(new_vlp)
             db.session.commit() 
             
@@ -104,7 +114,7 @@ def create_app_instance():
             room_name = f"{name} Room"
 
             # This function calls twilio api to create room
-            create_room(room_name)
+            create_room(room_name, new_vlp.id)
            
 
             # Send a WhatsApp message to all registered users with a link to the virtual listening party
@@ -136,7 +146,9 @@ def create_app_instance():
 
             if room:
                 # Generate a Twilio access token for the user
-                token = generate_token(room.name, room.sid)
+
+                user = current_user
+                token = generate_token(room.name, room.sid, user.id)
 
                 # Render the join room template with the Access Token and room name
                 return render_template('room.html', token=token, room_name=room.name)
