@@ -194,13 +194,13 @@ def create_app_instance():
             upcoming_parties_list.append(party_info)
         
 
-        # Send whatsapp messages of all upcoming parties to users
-        users = User.query.all()
-        for user in users:
-            reciepent_no = user.phone_number
+        # # Send whatsapp messages of all upcoming parties to users
+        # users = User.query.all()
+        # for user in users:
+        #     reciepent_no = user.phone_number
 
-            msg = f"Ahoy!! Keep up with all upcoming parties. Visit our website to see more"
-            sendNotification(user.phone_number, msg)
+        #     msg = f"Ahoy!! Keep up with all upcoming parties. Visit our website to see more"
+        #     sendNotification(user.phone_number, msg)
 
         return render_template('show.html', active_parties = active_parties_list, upcoming_parties = upcoming_parties_list)
         

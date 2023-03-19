@@ -10,24 +10,26 @@
 
         {% if active_parties %}
             <h2>Active Parties</h2>
+            <div>
             <ul class="list-group">
-                {% for party in active_parties %}
+                {% for party in active_partiesx %}
                     <li class="list-group-item">
                         <h3>{{ party.name }}</h3>
                         <p>{{ party.description }}</p>
                         <p>Date: {{ party.date }}</p>
                         <a href="{{ url_for('join_virtual_listening_party', identifier=party.link.split('/')[-1]) }}" class="btn btn-primary">Join Party</a>
 
-                        
                     </li>
                 {% endfor %}
             </ul>
+        </div>
         {% endif %}
 
         {% if upcoming_parties %}
             <h2>Upcoming Parties</h2>
             <ul class="list-group">
                 {% for party in upcoming_parties %}
+                <div>
                     <li class="list-group-item">
                         <h3>{{ party.name }}</h3>
                         <p>{{ party.description }}</p>
@@ -35,6 +37,7 @@
                         <a href="{{ url_for('join_virtual_listening_party', identifier=party.link.split('/')[-1]) }}" class="btn btn-primary">Join Party</a>
 
                     </li>
+                </div>
                 {% endfor %}
             </ul>
         {% endif %}
